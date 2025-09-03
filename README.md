@@ -1,78 +1,89 @@
-![SDXL Worker Banner](https://cpjrphpz3t5wbwfe.public.blob.vercel-storage.com/worker-sdxl_banner-c7nsJLBOGHnmsxcshN7kSgALHYawnW.jpeg)
+# Image Generation with Stable Diffusion and CivitAI Models
 
----
+This project provides a pipeline to download models from CivitAI and generate images using Stable Diffusion.
 
-Run [Stable Diffusion XL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) as a serverless endpoint to generate images.
+## Features
+- Download models from CivitAI using API tokens
+- Generate high-quality images from text prompts
+- Optimized for GPU performance with xformers and CUDA
+- Ready for deployment with Docker and RunPod
 
----
+## Prerequisites
+- Python 3.11
+- NVIDIA GPU with CUDA 12.1 support (for local development)
+- CivitAI API token (set as `CIVITAI_TOKEN` environment variable)
 
-[![RunPod](https://api.runpod.io/badge/runpod-workers/worker-sdxl)](https://www.runpod.io/console/hub/runpod-workers/worker-sdxl)
+## Installation
 
----
+### Local Setup
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/imagegen.git
+cd imagegen
+```
+
+2. Create and activate a virtual environment:
+```bash
+python3.11 -m venv venv
+source venv/bin/activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+4. Set your CivitAI token:
+```bash
+export CIVITAI_TOKEN='your_token_here'
+```
+
+### Docker Setup
+```bash
+docker build -t imagegen .
+docker run --gpus all -e CIVITAI_TOKEN='your_token_here' imagegen
+```
 
 ## Usage
 
-The worker accepts the following input parameters:
-
-| Parameter                 | Type    | Default  | Required  | Description                                                                                                         |
-| :------------------------ | :------ | :------- | :-------- | :------------------------------------------------------------------------------------------------------------------ |
-| `prompt`                  | `str`   | `None`   | **Yes\*** | The main text prompt describing the desired image.                                                                  |
-| `negative_prompt`         | `str`   | `None`   | No        | Text prompt specifying concepts to exclude from the image                                                           |
-| `height`                  | `int`   | `1024`   | No        | The height of the generated image in pixels                                                                         |
-| `width`                   | `int`   | `1024`   | No        | The width of the generated image in pixels                                                                          |
-| `seed`                    | `int`   | `None`   | No        | Random seed for reproducibility. If `None`, a random seed is generated                                              |
-| `scheduler`               | `str`   | `'DDIM'` | No        | The noise scheduler to use. Options include `PNDM`, `KLMS`, `DDIM`, `K_EULER`, `DPMSolverMultistep`                 |
-| `num_inference_steps`     | `int`   | `25`     | No        | Number of denoising steps for the base model                                                                        |
-| `refiner_inference_steps` | `int`   | `50`     | No        | Number of denoising steps for the refiner model                                                                     |
-| `guidance_scale`          | `float` | `7.5`    | No        | Classifier-Free Guidance scale. Higher values lead to images closer to the prompt, lower values more creative       |
-| `strength`                | `float` | `0.3`    | No        | The strength of the noise added when using an `image_url` for image-to-image or refinement                          |
-| `image_url`               | `str`   | `None`   | No        | URL of an initial image to use for image-to-image generation (runs only refiner). If `None`, performs text-to-image |
-| `num_images`              | `int`   | `1`      | No        | Number of images to generate per prompt (Constraint: must be 1 or 2)                                                |
-| `high_noise_frac`         | `float` | `None`   | No        | Fraction of denoising steps performed by the base model (e.g., 0.8 for 80%). `denoising_end` for base               |
-
-> [!NOTE]  
-> `prompt` is required unless `image_url` is provided
-
-### Example Request
-
-```json
-{
-  "input": {
-    "prompt": "A majestic steampunk dragon soaring through a cloudy sky, intricate clockwork details, golden hour lighting, highly detailed",
-    "negative_prompt": "blurry, low quality, deformed, ugly, text, watermark, signature",
-    "height": 1024,
-    "width": 1024,
-    "num_inference_steps": 25,
-    "refiner_inference_steps": 50,
-    "guidance_scale": 7.5,
-    "strength": 0.3,
-    "high_noise_frac": 0.8,
-    "seed": 42,
-    "scheduler": "K_EULER",
-    "num_images": 1
-  }
-}
+### Downloading Models
+Run the download script to get the pony model from CivitAI:
+```bash
+python download_civitai.py
 ```
 
-which is producing an output like this:
-
-```json
-{
-  "delayTime": 11449,
-  "executionTime": 6120,
-  "id": "447f10b8-c745-4c3b-8fad-b1d4ebb7a65b-e1",
-  "output": {
-    "image_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAIAAADwf7zU...",
-    "images": [
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAQACAIAAADwf7zU..."
-    ],
-    "seed": 42
-  },
-  "status": "COMPLETED",
-  "workerId": "462u6mrq9s28h6"
-}
+### Generating Images
+Use the handler to generate images:
+```bash
+python handler.py
 ```
 
-and when you convert the base64-encoded image into an actual image, it looks like this:
+This will create a sample image `generated_pony.png` with a default prompt.
 
-<img src="https://cpjrphpz3t5wbwfe.public.blob.vercel-storage.com/worker-sdxl_output_1-AedTpZlz1eIwIgAEShlod6syLo6Jq6.jpeg" alt="SDXL Generated Image: 'A majestic steampunk dragon soaring through a cloudy sky, intricate clockwork details, golden hour lighting, highly detailed'" width="512" height="512">
+### Custom Generation
+Modify `handler.py` to use your own prompts:
+```python
+image_bytes = generate_image(
+    prompt="your custom prompt here",
+    negative_prompt="elements to avoid"
+)
+```
+
+## Configuration
+
+### Environment Variables
+- `CIVITAI_TOKEN`: Your CivitAI API token (required for downloads)
+
+### Model Settings
+- Model files are saved to `models/` directory
+- Default model: Pony Diffusion (CivitAI Model ID: 439889)
+
+## Deployment
+
+The project includes GitHub Actions workflows for:
+- CI: Testing and dependency updates
+- CD: Docker image building and deployment
+
+## License
+
+This project is licensed under the terms of the MIT license. See [LICENSE](LICENSE) for details.
