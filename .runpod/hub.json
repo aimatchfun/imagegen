@@ -1,0 +1,22 @@
+{
+  "title": "SDXL (Stable Diffusion XL)",
+  "description": "Generate images with Stable Diffusion XL.",
+  "type": "serverless",
+  "category": "image",
+  "iconUrl": "https://dummyimage.com/100x100/7b00ff/fff&text=SDXL",
+  "config": {
+    "runsOn": "GPU",
+    "containerDiskInGb": 20,
+    "gpuIds": "ADA_24",
+    "gpuCount": 1,
+    "allowedCudaVersions": [
+      "12.7",
+      "12.6",
+      "12.5",
+      "12.4",
+      "12.3",
+      "12.2",
+      "12.1"
+    ]
+  }
+}
