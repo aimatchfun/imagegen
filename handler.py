@@ -2,12 +2,23 @@ import os
 import torch
 from diffusers import StableDiffusionPipeline
 from typing import Optional
+from download_civitai import download_civitai_model
 
 # Configuration
 MODEL_DIR = "models"
 MODEL_FILENAME = "civitai_model_439889.safetensors"
 MODEL_PATH = os.path.join(MODEL_DIR, MODEL_FILENAME)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Check if model exists, download if not
+if not os.path.exists(MODEL_PATH):
+    print(f"Model not found at {MODEL_PATH}. Downloading...")
+    CIVITAI_TOKEN = os.getenv('CIVITAI_TOKEN')
+    MODEL_URL = "https://civitai.com/api/download/models/439889?type=Model&format=SafeTensor&size=pruned&fp=fp16"
+    if CIVITAI_TOKEN:
+        download_civitai_model(MODEL_URL, CIVITAI_TOKEN, MODEL_DIR)
+    else:
+        raise ValueError("CIVITAI_TOKEN environment variable not set. Please set it to download the model.")
 
 # Load the model pipeline
 pipe = StableDiffusionPipeline.from_single_file(
